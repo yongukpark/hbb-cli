@@ -1,0 +1,2 @@
+head_label,prompt_count,delta_mean,delta_variance,decrease_ratio,top1_changed_ratio,dropped_from_top5_ratio,dropped_from_top20_ratio
+L13.H6,100,-0.06324371337890625,0.012581612618500361,0.8,0.41,0.1,0.03

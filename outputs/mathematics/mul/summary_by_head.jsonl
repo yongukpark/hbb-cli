@@ -1,0 +1,1 @@
+{"head_label": "L13.H6", "prompt_count": "100", "delta_mean": "-0.06324371337890625", "delta_variance": "0.012581612618500361", "decrease_ratio": "0.8", "top1_changed_ratio": "0.41", "dropped_from_top5_ratio": "0.1", "dropped_from_top20_ratio": "0.03"}
