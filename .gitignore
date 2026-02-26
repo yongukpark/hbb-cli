@@ -17,3 +17,7 @@ env/
 Thumbs.db
 *.swp
 *.swo
+
+# Generated outputs
+output/
+outputs/

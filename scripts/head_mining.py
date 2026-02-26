@@ -16,6 +16,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_MODEL_NAME = "EleutherAI/pythia-1.4b"
 SUMMARY_DECREASE_RATIO_THRESHOLD = 0.8
 SUMMARY_DELTA_MEAN_THRESHOLD = -0.01
+SUMMARY_DECREASE_RATIO_FALLBACKS = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
 
 
 def get_device() -> torch.device:
@@ -154,10 +155,13 @@ def _load_prompt_items(dataset_root: Path, prompts_file: str) -> tuple[list[dict
     used_files: list[str] = []
 
     if prompts_file.strip():
-        fp = Path(prompts_file)
-        for prompt in _load_prompts(fp):
-            items.append({"prompt": prompt, "source_file": str(fp), "category": fp.parent.name or "custom"})
-        used_files.append(str(fp))
+        prompt_paths = [Path(x.strip()) for x in prompts_file.split(",") if x.strip()]
+        if not prompt_paths:
+            raise ValueError("--prompts-file was set but no valid file path was provided.")
+        for fp in prompt_paths:
+            for prompt in _load_prompts(fp):
+                items.append({"prompt": prompt, "source_file": str(fp), "category": fp.parent.name or "custom"})
+            used_files.append(str(fp))
         return items, used_files
 
     if not dataset_root.exists() or not dataset_root.is_dir():
@@ -230,6 +234,24 @@ def _load_existing_csv_keys(path: Path, key_fields: tuple[str, ...]) -> set[tupl
         for row in reader:
             keys.add(_row_key(row, key_fields))
     return keys
+
+
+def _csv_has_data_rows(path: Path) -> bool:
+    if not path.exists() or path.stat().st_size == 0:
+        return False
+    with path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        return next(reader, None) is not None
+
+
+def _jsonl_has_data_rows(path: Path) -> bool:
+    if not path.exists() or path.stat().st_size == 0:
+        return False
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                return True
+    return False
 
 
 def _sort_summary_files(summary_csv_path: Path, summary_jsonl_path: Path) -> None:
@@ -479,8 +501,10 @@ def main() -> None:
             prompt_head_jsonl_path = bucket_dir / "prompt_by_head.jsonl"
             summary_key_fields = ("head_label", "prompt_count")
             prompt_key_fields = ("head_label", "prompt_index")
+            had_summary_data = _jsonl_has_data_rows(summary_jsonl_path)
             existing_summary_keys = _load_existing_csv_keys(summary_csv_path, summary_key_fields)
             existing_prompt_keys = _load_existing_csv_keys(prompt_head_csv_path, prompt_key_fields)
+            summary_candidates: list[dict] = []
             done = 0
             for layer in range(n_layers):
                 for head in range(n_heads):
@@ -499,14 +523,8 @@ def main() -> None:
                         **summary,
                     }
                     summary_key = _row_key(row, summary_key_fields)
-                    if (
-                        row["decrease_ratio"] >= SUMMARY_DECREASE_RATIO_THRESHOLD
-                        and row["delta_mean"] < SUMMARY_DELTA_MEAN_THRESHOLD
-                        and summary_key not in existing_summary_keys
-                    ):
-                        _append_csv_rows(summary_csv_path, [row])
-                        _append_jsonl_rows(summary_jsonl_path, [row])
-                        existing_summary_keys.add(summary_key)
+                    if summary_key not in existing_summary_keys:
+                        summary_candidates.append(row)
                     prompt_head_rows = [
                         {
                             "head_label": _head_label(layer, head),
@@ -534,6 +552,24 @@ def main() -> None:
                     done += 1
                     if done % 10 == 0 or done == total:
                         print(f"  - [{category}/{source_name}] head done: {done}/{total}")
+
+            selected_summary_rows: list[dict] = []
+            for threshold in [SUMMARY_DECREASE_RATIO_THRESHOLD, *SUMMARY_DECREASE_RATIO_FALLBACKS]:
+                tier_rows = [
+                    row
+                    for row in summary_candidates
+                    if row["decrease_ratio"] >= threshold and row["delta_mean"] < SUMMARY_DELTA_MEAN_THRESHOLD
+                ]
+                if tier_rows:
+                    selected_summary_rows = tier_rows
+                    break
+
+            if selected_summary_rows:
+                _append_csv_rows(summary_csv_path, selected_summary_rows)
+                _append_jsonl_rows(summary_jsonl_path, selected_summary_rows)
+            elif not had_summary_data:
+                # Leave summary empty when no threshold tier yields candidates.
+                pass
 
             _sort_summary_files(summary_csv_path, summary_jsonl_path)
 
