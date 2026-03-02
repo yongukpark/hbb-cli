@@ -4,16 +4,22 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
+import random
 import re
 from contextlib import nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Keep CUDA GEMM deterministic defaults unless caller overrides.
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_MODEL_NAME = "EleutherAI/pythia-1.4b"
+DEFAULT_SEED = 42
 SUMMARY_DECREASE_RATIO_THRESHOLD = 0.8
 SUMMARY_DELTA_MEAN_THRESHOLD = -0.01
 SUMMARY_DECREASE_RATIO_FALLBACKS = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
@@ -21,6 +27,30 @@ SUMMARY_DECREASE_RATIO_FALLBACKS = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
 
 def get_device() -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def configure_reproducibility(seed: int, device: torch.device) -> None:
+    random.seed(seed)
+    torch.manual_seed(seed)
+    try:
+        import numpy as np  # type: ignore
+
+        np.random.seed(seed)
+    except ImportError:
+        pass
+
+    if device.type == "cuda":
+        # Required by CUDA for deterministic GEMM kernels.
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+
+    torch.use_deterministic_algorithms(True)
+    if hasattr(torch, "set_float32_matmul_precision"):
+        torch.set_float32_matmul_precision("highest")
 
 
 def load_model(model_name: str, device_name: str):
@@ -75,7 +105,9 @@ def _replace_last_token_heads_hook(
     return hook
 
 
-def _capture_attn_pre_dense_last(model, input_ids: torch.Tensor, n_layers: int) -> dict[int, torch.Tensor]:
+def _forward_with_hidden_cache(
+    model, input_ids: torch.Tensor, n_layers: int
+) -> tuple[torch.Tensor, torch.Tensor, dict[int, torch.Tensor]]:
     cached: dict[int, torch.Tensor] = {}
     handles = []
 
@@ -90,17 +122,25 @@ def _capture_attn_pre_dense_last(model, input_ids: torch.Tensor, n_layers: int) 
         h = model.gpt_neox.layers[layer_idx].attention.dense.register_forward_pre_hook(build_hook(layer_idx))
         handles.append(h)
 
-    with torch.inference_mode():
-        _ = model(input_ids)
-
+    amp_ctx = torch.autocast(device_type="cuda", dtype=torch.float16) if input_ids.is_cuda else nullcontext()
+    with torch.inference_mode(), amp_ctx:
+        logits = model(input_ids).logits
     for h in handles:
         h.remove()
 
-    return {layer_idx: hidden[0, -1].cpu() for layer_idx, hidden in cached.items()}
+    last_logits = logits[0, -1]
+    last_probs = torch.softmax(last_logits, dim=-1)
+    hidden_by_layer = {layer_idx: hidden[0, -1].cpu() for layer_idx, hidden in cached.items()}
+    return last_logits, last_probs, hidden_by_layer
 
 
 def _topk_ids(probs: torch.Tensor, k: int) -> list[int]:
     return torch.topk(probs, k=min(k, probs.shape[-1])).indices.tolist()
+
+
+def _token_rank(probs: torch.Tensor, token_id: int) -> int:
+    # Rank = 1 + number of tokens with strictly higher probability.
+    return int((probs > probs[token_id]).sum().item()) + 1
 
 
 def _snapshot(tokenizer, logits: torch.Tensor, probs: torch.Tensor, top_k: int) -> dict:
@@ -221,6 +261,13 @@ def _append_jsonl_rows(path: Path, rows: list[dict]) -> None:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def _save_jsonl(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        for row in rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
 def _row_key(row: dict, key_fields: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(str(row.get(k, "")) for k in key_fields)
 
@@ -272,7 +319,7 @@ def _sort_summary_files(summary_csv_path: Path, summary_jsonl_path: Path) -> Non
     if not rows:
         return
 
-    rows.sort(key=lambda r: float(r.get("delta_mean", 0.0)))
+    rows.sort(key=lambda r: float(r.get("base_token_prob_delta_mean", 0.0)))
     _save_csv(summary_csv_path, rows)
     with summary_jsonl_path.open("w", encoding="utf-8") as f:
         for row in rows:
@@ -296,14 +343,14 @@ def _prepare_baseline(model, tokenizer, device: torch.device, prompt_items: list
     baseline_items: list[dict] = []
     for idx, item in enumerate(prompt_items, start=1):
         input_ids = encode_prompt(tokenizer, item["prompt"], device)
-        logits, probs = forward_last_token(model, input_ids)
+        logits, probs, hidden_by_layer = _forward_with_hidden_cache(model, input_ids, n_layers=n_layers)
         baseline_items.append(
             {
                 **item,
                 "input_ids": input_ids,
                 "baseline_probs": probs,
                 "baseline_snapshot": _snapshot(tokenizer, logits, probs, top_k=top_k),
-                "hidden_by_layer": _capture_attn_pre_dense_last(model, input_ids, n_layers=n_layers),
+                "hidden_by_layer": hidden_by_layer,
             }
         )
         if idx % 5 == 0 or idx == len(prompt_items):
@@ -335,7 +382,7 @@ def _evaluate_head_set(
     head_dim = model.config.hidden_size // n_heads
 
     if len(baseline_items) < 2:
-        raise ValueError("Resampling needs at least 2 prompts.")
+        raise ValueError("Replace needs at least 2 prompts.")
 
     heads_by_layer: dict[int, list[int]] = {}
     for layer_idx, head_idx in selected_multi_heads:
@@ -363,11 +410,19 @@ def _evaluate_head_set(
             h.remove()
 
         base_top1_id = base["baseline_snapshot"]["top1_id"]
-        delta = float(modified_probs[base_top1_id].item() - base["baseline_probs"][base_top1_id].item())
-
-        top1_changed = modified_probs.argmax().item() != base_top1_id
-        dropped_from_top5 = base_top1_id not in _topk_ids(modified_probs, 5)
-        dropped_from_top20 = base_top1_id not in _topk_ids(modified_probs, 20)
+        donor_top1_id = donor["baseline_snapshot"]["top1_id"]
+        donor_top1_token = donor["baseline_snapshot"]["top1_token"]
+        base_token_prob_delta = float(modified_probs[base_top1_id].item() - base["baseline_probs"][base_top1_id].item())
+        base_token_prob_direction = "decrease" if base_token_prob_delta < 0 else "increase_or_same"
+        base_token_changed = modified_probs.argmax().item() != base_top1_id
+        base_top1_rank_pre_replace = _token_rank(base["baseline_probs"], base_top1_id)
+        base_top1_rank_post_replace = _token_rank(modified_probs, base_top1_id)
+        donor_prob_pre_replace = float(base["baseline_probs"][donor_top1_id].item())
+        donor_prob_post_replace = float(modified_probs[donor_top1_id].item())
+        donor_prob_delta = donor_prob_post_replace - donor_prob_pre_replace
+        donor_rank_pre_replace = _token_rank(base["baseline_probs"], donor_top1_id)
+        donor_rank_post_replace = _token_rank(modified_probs, donor_top1_id)
+        donor_rank_change = donor_rank_post_replace - donor_rank_pre_replace
 
         baseline_snapshot = (
             base["baseline_snapshot"]
@@ -378,7 +433,7 @@ def _evaluate_head_set(
                 "top1_prob": base["baseline_snapshot"]["top1_prob"],
             }
         )
-        resampled_snapshot = (
+        replaced_snapshot = (
             _snapshot(tokenizer, modified_logits, modified_probs, top_k=top_k)
             if detailed_snapshots
             else _snapshot_top1(tokenizer, modified_probs)
@@ -392,26 +447,41 @@ def _evaluate_head_set(
                 "source_file": base["source_file"],
                 "donor_prompt_index": donor_idx,
                 "donor_prompt": donor["prompt"],
-                "delta": delta,
-                "delta_direction": "decrease" if delta < 0 else "increase_or_same",
-                "top1_changed": top1_changed,
-                "dropped_from_top5": dropped_from_top5,
-                "dropped_from_top20": dropped_from_top20,
+                "base_token_prob_delta": base_token_prob_delta,
+                "base_token_prob_direction": base_token_prob_direction,
+                "base_token_changed": base_token_changed,
+                "base_token_rank_pre_replace": base_top1_rank_pre_replace,
+                "base_token_rank_post_replace": base_top1_rank_post_replace,
+                "base_token_rank_change": base_top1_rank_post_replace - base_top1_rank_pre_replace,
+                "donor_token_id": donor_top1_id,
+                "donor_token": donor_top1_token,
+                "donor_token_prob_pre_replace": donor_prob_pre_replace,
+                "donor_token_prob_post_replace": donor_prob_post_replace,
+                "donor_token_prob_delta": donor_prob_delta,
+                "donor_token_rank_pre_replace": donor_rank_pre_replace,
+                "donor_token_rank_post_replace": donor_rank_post_replace,
+                "donor_token_rank_change": donor_rank_change,
                 "baseline": baseline_snapshot,
-                "resampled": resampled_snapshot,
+                "replaced": replaced_snapshot,
             }
         )
 
-    deltas = [r["delta"] for r in prompt_metrics]
+    base_token_prob_deltas = [r["base_token_prob_delta"] for r in prompt_metrics]
+    donor_token_prob_deltas = [r["donor_token_prob_delta"] for r in prompt_metrics]
     count = len(prompt_metrics)
     summary = {
         "prompt_count": count,
-        "delta_mean": _mean(deltas),
-        "delta_variance": _variance(deltas),
-        "decrease_ratio": sum(1 for d in deltas if d < 0) / count,
-        "top1_changed_ratio": sum(1 for r in prompt_metrics if r["top1_changed"]) / count,
-        "dropped_from_top5_ratio": sum(1 for r in prompt_metrics if r["dropped_from_top5"]) / count,
-        "dropped_from_top20_ratio": sum(1 for r in prompt_metrics if r["dropped_from_top20"]) / count,
+        "base_token_prob_delta_mean": _mean(base_token_prob_deltas),
+        "base_token_prob_delta_variance": _variance(base_token_prob_deltas),
+        "base_token_prob_decrease_ratio": sum(1 for d in base_token_prob_deltas if d < 0) / count,
+        "base_token_changed_ratio": sum(1 for r in prompt_metrics if r["base_token_changed"]) / count,
+        "base_token_rank_post_replace_mean": _mean([float(r["base_token_rank_post_replace"]) for r in prompt_metrics]),
+        "donor_token_prob_delta_mean": _mean(donor_token_prob_deltas),
+        "donor_token_prob_delta_variance": _variance(donor_token_prob_deltas),
+        "donor_token_prob_increase_ratio": sum(1 for d in donor_token_prob_deltas if d > 0) / count,
+        "donor_token_rank_up_ratio": sum(1 for r in prompt_metrics if r["donor_token_rank_change"] < 0) / count,
+        "donor_token_rank_pre_replace_mean": _mean([float(r["donor_token_rank_pre_replace"]) for r in prompt_metrics]),
+        "donor_token_rank_post_replace_mean": _mean([float(r["donor_token_rank_post_replace"]) for r in prompt_metrics]),
     }
     return prompt_metrics, summary
 
@@ -426,8 +496,36 @@ def _output_bucket_parts(item: dict) -> tuple[str, str]:
     return category, source_name
 
 
+def _build_prompt_output_rows(bucket_items: list[dict]) -> list[dict]:
+    rows: list[dict] = []
+    for idx, item in enumerate(bucket_items):
+        snap = item["baseline_snapshot"]
+        rows.append(
+            {
+                "prompt_index": idx,
+                "prompt": item["prompt"],
+                "base_token": snap["top1_token"],
+                "base_token_prob": snap["top1_prob"],
+            }
+        )
+    return rows
+
+
+def _write_prompt_output_maps(out_dir: Path, baseline_items: list[dict]) -> None:
+    by_bucket: dict[tuple[str, str], list[dict]] = {}
+    for item in baseline_items:
+        by_bucket.setdefault(_output_bucket_parts(item), []).append(item)
+
+    for bucket, bucket_items in by_bucket.items():
+        category, source_name = bucket
+        bucket_dir = out_dir / category / source_name
+        rows = _build_prompt_output_rows(bucket_items)
+        _save_csv(bucket_dir / "prompt_output_map.csv", rows)
+        _save_jsonl(bucket_dir / "prompt_output_map.jsonl", rows)
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Resampling head intervention with prompt/global metrics.")
+    parser = argparse.ArgumentParser(description="Replace head intervention with prompt/global metrics.")
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"], help="Execution device")
     parser.add_argument(
         "--dataset-root",
@@ -449,7 +547,8 @@ def main() -> None:
         action="store_true",
         help="Run every single (layer,head) and write one summary row per head.",
     )
-    parser.add_argument("--top-k", type=int, default=20, help="Top-k to store for before/after snapshots")
+    parser.add_argument("--top-k", type=int, default=20, help="Top-k to store for pre/post replace snapshots")
+    parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="Random seed for reproducible runs")
     parser.add_argument(
         "--output-dir",
         default=str(ROOT_DIR / "outputs"),
@@ -463,9 +562,7 @@ def main() -> None:
         raise ValueError("Provide --multi-heads, or use --scan-all-heads.")
 
     device = get_device() if args.device == "auto" else torch.device(args.device)
-    if device.type == "cuda":
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
+    configure_reproducibility(args.seed, device)
     prompt_items, _ = _load_prompt_items(Path(args.dataset_root), args.prompts_file)
 
     print(f"Loading model: {DEFAULT_MODEL_NAME} on {device} ...")
@@ -479,6 +576,8 @@ def main() -> None:
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    _write_prompt_output_maps(out_dir, baseline_items)
+    print(f"- wrote prompt/output maps under: {out_dir}")
 
     if args.scan_all_heads:
         by_bucket: dict[tuple[str, str], list[dict]] = {}
@@ -505,6 +604,7 @@ def main() -> None:
             existing_summary_keys = _load_existing_csv_keys(summary_csv_path, summary_key_fields)
             existing_prompt_keys = _load_existing_csv_keys(prompt_head_csv_path, prompt_key_fields)
             summary_candidates: list[dict] = []
+            prompt_rows_to_append: list[dict] = []
             done = 0
             for layer in range(n_layers):
                 for head in range(n_heads):
@@ -529,14 +629,23 @@ def main() -> None:
                         {
                             "head_label": _head_label(layer, head),
                             "prompt_index": r["prompt_index"],
-                            "delta": r["delta"],
-                            "delta_direction": r["delta_direction"],
-                            "top1_changed": r["top1_changed"],
-                            "dropped_from_top5": r["dropped_from_top5"],
-                            "baseline_top1_token": r["baseline"]["top1_token"],
-                            "baseline_top1_prob": r["baseline"]["top1_prob"],
-                            "resampled_top1_token": r["resampled"]["top1_token"],
-                            "resampled_top1_prob": r["resampled"]["top1_prob"],
+                            "base_token_prob_delta": r["base_token_prob_delta"],
+                            "base_token_prob_direction": r["base_token_prob_direction"],
+                            "base_token_changed": r["base_token_changed"],
+                            "base_token_rank_pre_replace": r["base_token_rank_pre_replace"],
+                            "base_token_rank_post_replace": r["base_token_rank_post_replace"],
+                            "base_token_rank_change": r["base_token_rank_change"],
+                            "donor_token": r["donor_token"],
+                            "donor_token_prob_pre_replace": r["donor_token_prob_pre_replace"],
+                            "donor_token_prob_post_replace": r["donor_token_prob_post_replace"],
+                            "donor_token_prob_delta": r["donor_token_prob_delta"],
+                            "donor_token_rank_pre_replace": r["donor_token_rank_pre_replace"],
+                            "donor_token_rank_post_replace": r["donor_token_rank_post_replace"],
+                            "donor_token_rank_change": r["donor_token_rank_change"],
+                            "baseline_base_token": r["baseline"]["top1_token"],
+                            "baseline_base_token_prob": r["baseline"]["top1_prob"],
+                            "replaced_base_token": r["replaced"]["top1_token"],
+                            "replaced_base_token_prob": r["replaced"]["top1_prob"],
                         }
                         for r in prompt_metrics
                     ]
@@ -547,18 +656,21 @@ def main() -> None:
                             continue
                         existing_prompt_keys.add(k)
                         new_prompt_rows.append(r)
-                    _append_csv_rows(prompt_head_csv_path, new_prompt_rows)
-                    _append_jsonl_rows(prompt_head_jsonl_path, new_prompt_rows)
+                    prompt_rows_to_append.extend(new_prompt_rows)
                     done += 1
                     if done % 10 == 0 or done == total:
                         print(f"  - [{category}/{source_name}] head done: {done}/{total}")
+
+            _append_csv_rows(prompt_head_csv_path, prompt_rows_to_append)
+            _append_jsonl_rows(prompt_head_jsonl_path, prompt_rows_to_append)
 
             selected_summary_rows: list[dict] = []
             for threshold in [SUMMARY_DECREASE_RATIO_THRESHOLD, *SUMMARY_DECREASE_RATIO_FALLBACKS]:
                 tier_rows = [
                     row
                     for row in summary_candidates
-                    if row["decrease_ratio"] >= threshold and row["delta_mean"] < SUMMARY_DELTA_MEAN_THRESHOLD
+                    if row["base_token_prob_decrease_ratio"] >= threshold
+                    and row["base_token_prob_delta_mean"] < SUMMARY_DELTA_MEAN_THRESHOLD
                 ]
                 if tier_rows:
                     selected_summary_rows = tier_rows
@@ -598,17 +710,23 @@ def main() -> None:
         cat_prompt_csv_path = bucket_dir / f"prompt_metrics_{ts}.csv"
         cat_summary_json_path = bucket_dir / f"summary_{ts}.json"
         cat_summary_csv_path = bucket_dir / f"summary_{ts}.csv"
-        deltas = [r["delta"] for r in rows]
+        base_token_prob_deltas = [r["base_token_prob_delta"] for r in rows]
+        donor_token_prob_deltas = [r["donor_token_prob_delta"] for r in rows]
         count = len(rows)
         cat_summary = {
             "head_set": args.multi_heads,
             "prompt_count": count,
-            "delta_mean": _mean(deltas),
-            "delta_variance": _variance(deltas),
-            "decrease_ratio": sum(1 for d in deltas if d < 0) / count,
-            "top1_changed_ratio": sum(1 for r in rows if r["top1_changed"]) / count,
-            "dropped_from_top5_ratio": sum(1 for r in rows if r["dropped_from_top5"]) / count,
-            "dropped_from_top20_ratio": sum(1 for r in rows if r["dropped_from_top20"]) / count,
+            "base_token_prob_delta_mean": _mean(base_token_prob_deltas),
+            "base_token_prob_delta_variance": _variance(base_token_prob_deltas),
+            "base_token_prob_decrease_ratio": sum(1 for d in base_token_prob_deltas if d < 0) / count,
+            "base_token_changed_ratio": sum(1 for r in rows if r["base_token_changed"]) / count,
+            "base_token_rank_post_replace_mean": _mean([float(r["base_token_rank_post_replace"]) for r in rows]),
+            "donor_token_prob_delta_mean": _mean(donor_token_prob_deltas),
+            "donor_token_prob_delta_variance": _variance(donor_token_prob_deltas),
+            "donor_token_prob_increase_ratio": sum(1 for d in donor_token_prob_deltas if d > 0) / count,
+            "donor_token_rank_up_ratio": sum(1 for r in rows if r["donor_token_rank_change"] < 0) / count,
+            "donor_token_rank_pre_replace_mean": _mean([float(r["donor_token_rank_pre_replace"]) for r in rows]),
+            "donor_token_rank_post_replace_mean": _mean([float(r["donor_token_rank_post_replace"]) for r in rows]),
         }
         cat_prompt_json_path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
         cat_summary_json_path.write_text(json.dumps(cat_summary, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -619,15 +737,23 @@ def main() -> None:
                     "category": r["category"],
                     "prompt_index": r["prompt_index"],
                     "source_file": r["source_file"],
-                    "delta": r["delta"],
-                    "delta_direction": r["delta_direction"],
-                    "top1_changed": r["top1_changed"],
-                    "dropped_from_top5": r["dropped_from_top5"],
-                    "dropped_from_top20": r["dropped_from_top20"],
-                    "baseline_top1_token": r["baseline"]["top1_token"],
-                    "baseline_top1_prob": r["baseline"]["top1_prob"],
-                    "resampled_top1_token": r["resampled"]["top1_token"],
-                    "resampled_top1_prob": r["resampled"]["top1_prob"],
+                    "base_token_prob_delta": r["base_token_prob_delta"],
+                    "base_token_prob_direction": r["base_token_prob_direction"],
+                    "base_token_changed": r["base_token_changed"],
+                    "base_token_rank_pre_replace": r["base_token_rank_pre_replace"],
+                    "base_token_rank_post_replace": r["base_token_rank_post_replace"],
+                    "base_token_rank_change": r["base_token_rank_change"],
+                    "donor_token": r["donor_token"],
+                    "donor_token_prob_pre_replace": r["donor_token_prob_pre_replace"],
+                    "donor_token_prob_post_replace": r["donor_token_prob_post_replace"],
+                    "donor_token_prob_delta": r["donor_token_prob_delta"],
+                    "donor_token_rank_pre_replace": r["donor_token_rank_pre_replace"],
+                    "donor_token_rank_post_replace": r["donor_token_rank_post_replace"],
+                    "donor_token_rank_change": r["donor_token_rank_change"],
+                    "baseline_base_token": r["baseline"]["top1_token"],
+                    "baseline_base_token_prob": r["baseline"]["top1_prob"],
+                    "replaced_base_token": r["replaced"]["top1_token"],
+                    "replaced_base_token_prob": r["replaced"]["top1_prob"],
                 }
                 for r in rows
             ],

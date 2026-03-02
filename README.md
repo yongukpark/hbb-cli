@@ -1,24 +1,32 @@
 # hbb_cli
 
-`hbb_cli`는 attention head resampling 실험을 실행하고, 프롬프트별/head별 지표를 저장하는 CLI 프로젝트입니다.
+`hbb_cli`는 attention head replace 실험을 실행하고, 프롬프트별/head별 지표를 저장하는 CLI 프로젝트입니다.
 
 ## 지표
 ### 프롬프트 별
-* delta : 변화량
-* delta_direction : 변화하는 방향 (logit을 올리는지 내리는지)
-* top1_changed : 실제 해당 head의 resampling을 통해 출력 값이 변하였는지
-* dropped_from_top5 : 원래 출력값의 로짓이 top_5에서 밀려났는지(영향력이 큰가)
-* baseline_top1_token(prob) : 원래 출력값과 그 확률
-* resampled_top1_token(prob) : 바뀐 출력값과 그 확률 
+* base_token_prob_delta : base token 확률 변화량
+* base_token_prob_direction : base token 확률 변화 방향 (감소/증가)
+* base_token_changed : replace 후 base token이 예측 토큰에서 바뀌었는지
+* base_token_rank_pre_replace/post_replace/change : base token이 몇 등에서 몇 등으로 바뀌었는지
+* donor_token : donor 프롬프트의 원래 토큰
+* donor_token_prob_pre_replace/post_replace/delta : donor 토큰의 확률이 얼마나 증가/감소했는지
+* donor_token_rank_pre_replace/post_replace/change : donor 토큰이 base 분포에서 몇 등에서 몇 등으로 이동했는지
+* baseline_base_token(prob) : 원래 출력값과 그 확률
+* replaced_base_token(prob) : 바뀐 출력값과 그 확률 
 
 ### head 별
 * prompt_count : 실험에 사용한 프롬프트 개수
-* delta_mean : 변화량 평균
-* delta_variance : 변화량 분산
-* decrease_ratio : 전체 프롬프트 중 확률이 떨어진 것의 비율(1.0에 가까울수록 영향력이 큼)
-* top1_changed_ratio : 전체 프롬프트 중 top1이 바뀐 것의 비율
-* dropped_from_top5_ratio : 전체 프롬프트 중 top_5에서 밀려난 것의 비율
-* dropped_from_top20_ratio : 전체 프롬프트 중 top_20에서 밀려난 것의 비율
+* base_token_prob_delta_mean : base token 확률 변화량 평균
+* base_token_prob_delta_variance : base token 확률 변화량 분산
+* base_token_prob_decrease_ratio : 전체 프롬프트 중 base token 확률이 떨어진 비율
+* base_token_changed_ratio : 전체 프롬프트 중 base token이 바뀐 비율
+* base_token_rank_post_replace_mean : base token의 replace 후 평균 등수
+* donor_token_prob_delta_mean : donor 토큰 확률 변화량 평균
+* donor_token_prob_delta_variance : donor 토큰 확률 변화량 분산
+* donor_token_prob_increase_ratio : donor 토큰 확률이 증가한 비율
+* donor_token_rank_up_ratio : donor 토큰 rank가 실제로 상승한 비율
+* donor_token_rank_pre_replace_mean : donor 토큰의 replace 전 평균 rank
+* donor_token_rank_post_replace_mean : donor 토큰의 replace 후 평균 rank
 
 ## 요구 사항
 
@@ -70,6 +78,7 @@ python3 scripts/head_mining.py \
 
 - 기본 출력 경로: `outputs/`
 - 주요 산출물:
+  - `prompt_output_map.csv`, `prompt_output_map.jsonl` (프롬프트와 baseline 출력 토큰 매핑)
   - `summary_by_head.csv`, `summary_by_head.jsonl`
   - `prompt_by_head.csv`, `prompt_by_head.jsonl`
   - (특정 head 세트 실행 시) `prompt_metrics_*.csv/json`, `summary_*.csv/json`
@@ -78,7 +87,7 @@ python3 scripts/head_mining.py \
 
 - 버킷(카테고리/소스 파일) 안 프롬프트가 2개 미만이면 해당 버킷은 스킵됩니다.
 - `scan-all-heads`에서 summary 필터를 통과한 head가 하나도 없으면 새 `summary_by_head`가 생성되지 않을 수 있습니다.
-  - 필터: `decrease_ratio >= threshold(0.8 -> 0.1 fallback)` 그리고 `delta_mean < -0.01`
+  - 필터: `base_token_prob_decrease_ratio >= threshold(0.8 -> 0.1 fallback)` 그리고 `base_token_prob_delta_mean < -0.01`
 - 재실행 시 이미 같은 `(head_label, prompt_count)` 키가 있으면 중복 추가하지 않습니다.
 
 # 결과
@@ -93,7 +102,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What is the capital of Egypt? Answer:`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L15.H7|16|-0.2265|0.0116|1|0.3125|
 |L17.H6|16|-0.0489|0.002|1|0.125|
@@ -109,7 +118,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What is the capital of Japan? Answer:`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L15.H7|25|-0.1683|0.0166|0.96|0.24|
 |L15.H3|25|-0.0372|0.003|0.8|0.04|
@@ -120,7 +129,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What is the capital of Italy? Answer:`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L15.H7|28|-0.1994|0.0161|0.9643|0.3929|
 |L17.H6|28|-0.067|0.002|0.9643|0.1071|
@@ -132,7 +141,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What is the capital of France? Answer:`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L15.H7|20|-0.2471|0.0153|1|0.25|
 |L20.H11|20|-0.0373|0.002|0.85|0|
@@ -145,7 +154,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What is the capital of the United States? Answer:`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L15.H7|16|-0.1287|0.0091|0.9375|0.375|
 |L17.H6|16|-0.0432|0.0016|0.875|0.0625|
@@ -160,7 +169,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What is the capital of Solomon Islands? Answer:`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L15.H7|7|-0.0846|0.003|0.8571|0.4286|
 |L20.H1|7|-0.0326|0.0016|1|0.5714|
@@ -174,7 +183,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What is the capital of Argentina? Answer:`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L15.H7|11|-0.1854|0.0139|1|0.2727|
 |L16.H2|11|-0.0655|0.0023|0.9091|0|
@@ -195,7 +204,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `The chemical symbol for Hydrogen is`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L13.H6|100|-0.1236|0.0207|0.84|0.19|
 |L22.H2|100|-0.0556|0.0039|0.82|0.01|
@@ -207,7 +216,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `1, 2,`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L12.H0|38|-0.2335|0.0615|0.8421|0.6053|
 
@@ -215,7 +224,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `1, 2, 3,`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L12.H0|32|-0.5218|0.0304|1|0.8438|
 |L10.H7|32|-0.0874|0.0062|0.8438|0|
@@ -228,7 +237,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Cal : 12+35=`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L12.H0|100|-0.2586|0.0304|0.91|0.78|
 |L13.H1|100|-0.2113|0.0312|0.93|0.57|
@@ -239,7 +248,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Find the pattern: 3, 7, 15, 31, 63, 127,`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L13.H6|30|-0.0339|0.003|0.8|0.1333|
 
@@ -247,7 +256,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Find the pattern: 2, 5, 8, 11,`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L13.H6|30|-0.1044|0.0067|1|0.4333|
 |L10.H7|30|-0.0271|0.001|0.8333|0.1333|
@@ -257,7 +266,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Output only the number. pi =`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L11.H11|50|-0.0115|0.0018|0.58|0.12|
 
@@ -271,7 +280,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Cal : 12*24=`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L13.H6|100|-0.0632|0.0126|0.8|0.41|
 
@@ -279,7 +288,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Cal : 39 minus 38=`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L13.H1|100|-0.1541|0.0158|0.96|0.67|
 |L11.H10|100|-0.1099|0.0178|0.88|0.53|
@@ -292,7 +301,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `The opposite of 'hot' is '`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L13.H2|100|-0.2209|0.0293|0.97|0.18|
 |L14.H12|100|-0.0573|0.0057|0.8|0.07|
@@ -312,7 +321,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Albert Einstein was born in`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L17.H0|50|-0.0213|0.001|0.8|0.26|
 
@@ -330,7 +339,7 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What country is Paris in? Answer:`
 
-|head|prompt_count|delta_mean|delta_variance|decrease_ratio|top1_changed_ratio|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
 |---|---|---|---|---|---|
 |L15.H7|28|-0.1592|0.0065|1.0|0.0714|
 |L17.H6|28|-0.0575|0.0012|0.9643|0.0714|
