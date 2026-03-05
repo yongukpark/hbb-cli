@@ -96,107 +96,98 @@ https://headbb.vercel.app/
 
 # 실험결과
 
+실험 결과 표는 아래 5개 핵심 지표 중심으로 정리했습니다.
+
+- `base_token_prob_delta_mean`
+- `base_token_prob_decrease_ratio`
+- `donor_token_rank_up_ratio`
+- `donor_token_rank_pre_replace_mean`
+- `donor_token_rank_post_replace_mean`
+
 ## 1. capitals
 
 ### africa
 
 - 프롬프트 예시: `What is the capital of Egypt? Answer:`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L15.H7|16|-0.2265|0.0116|1|0.3125|
-|L17.H6|16|-0.0489|0.002|1|0.125|
-|L18.H9|16|-0.0387|0.0032|0.8125|0.0625|
-|L15.H3|16|-0.0334|0.0012|0.9375|0.125|
-|L20.H11|16|-0.0262|0.0021|0.8125|0.0625|
-|L22.H2|16|-0.0186|0.0012|0.8125|0|
-|L13.H1|16|-0.0183|0.0005|0.8125|0.0625|
-|L23.H9|16|-0.0125|0.0002|0.8125|0|
-|L19.H7|16|-0.0106|0.0008|0.8125|0.0625|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|16|-0.2303|0.9375|1|392.875|14.75|
+|L17.H6|16|-0.0484|1|1|392.875|104.625|
+|L15.H3|16|-0.0355|0.875|0.9375|392.875|290.125|
+|L22.H2|16|-0.0204|0.8125|0.875|392.875|332.75|
+|L17.H0|16|-0.0131|0.8125|0.875|392.875|306.4375|
+|L23.H9|16|-0.013|0.875|0.875|392.875|366.75|
+|L19.H7|16|-0.0104|0.8125|0.8125|392.875|375.25|
 
 ### asia
 
 - 프롬프트 예시: `What is the capital of Japan? Answer:`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L15.H7|25|-0.1683|0.0166|0.96|0.24|
-|L15.H3|25|-0.0372|0.003|0.8|0.04|
-|L22.H2|25|-0.0178|0.0006|0.88|0|
-|L23.H13|25|-0.0103|0.0001|0.84|0|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|25|-0.1726|0.96|0.96|549.92|18.84|
+|L15.H3|25|-0.038|0.8|0.96|549.92|378.6|
+|L17.H6|25|-0.0334|0.8|0.92|549.92|145|
+|L18.H9|25|-0.0287|0.8|0.88|549.92|321.32|
+|L22.H2|25|-0.0183|0.88|0.8|549.92|511.92|
+|L23.H13|25|-0.0101|0.84|0.8|549.92|523|
 
 ### easy
 
 - 프롬프트 예시: `What is the capital of Italy? Answer:`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L15.H7|28|-0.1994|0.0161|0.9643|0.3929|
-|L17.H6|28|-0.067|0.002|0.9643|0.1071|
-|L22.H2|28|-0.0174|0.0003|0.8929|0|
-|L23.H9|28|-0.0137|0.0001|0.9286|0|
-|L23.H13|28|-0.0118|0.0002|0.8214|0|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|28|-0.201|0.9643|1|725.3214|7.3929|
+|L17.H6|28|-0.0687|0.9643|1|725.3214|75.8571|
+|L17.H0|28|-0.0186|0.8571|1|725.3214|376.2857|
+|L23.H9|28|-0.0137|0.9286|0.8571|725.3214|670.8571|
 
 ### europe
 
 - 프롬프트 예시: `What is the capital of France? Answer:`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L15.H7|20|-0.2471|0.0153|1|0.25|
-|L20.H11|20|-0.0373|0.002|0.85|0|
-|L17.H6|20|-0.0334|0.0008|0.95|0.05|
-|L13.H1|20|-0.0169|0.0005|0.8|0|
-|L22.H2|20|-0.0153|0.0002|0.9|0|
-|L23.H13|20|-0.0141|0.0002|0.8|0|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|20|-0.2513|1|0.95|226.65|3|
+|L17.H6|20|-0.0387|0.95|0.95|226.65|52.35|
+|L22.H2|20|-0.0173|0.8|0.95|226.65|202.95|
 
 ### north_america
 
 - 프롬프트 예시: `What is the capital of the United States? Answer:`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L15.H7|16|-0.1287|0.0091|0.9375|0.375|
-|L17.H6|16|-0.0432|0.0016|0.875|0.0625|
-|L15.H3|16|-0.0391|0.0018|0.875|0|
-|L13.H1|16|-0.022|0.001|0.8125|0.0625|
-|L22.H2|16|-0.016|0.0002|1|0|
-|L15.H11|16|-0.0135|0.001|0.8125|0|
-|L23.H13|16|-0.0125|0.0003|0.8125|0|
-|L13.H13|16|-0.0111|0.0005|0.8125|0|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|16|-0.1305|0.9375|1|207.1875|18.125|
+|L17.H6|16|-0.0419|0.9375|0.9375|207.1875|79.125|
+|L15.H3|16|-0.0366|0.875|0.8125|207.1875|131.1875|
+|L22.H2|16|-0.016|0.875|0.8125|207.1875|192.4375|
+|L23.H13|16|-0.0132|0.875|0.875|207.1875|193.4375|
 
 ### oceania
 
 - 프롬프트 예시: `What is the capital of Solomon Islands? Answer:`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L15.H7|7|-0.0846|0.003|0.8571|0.4286|
-|L20.H1|7|-0.0326|0.0016|1|0.5714|
-|L17.H6|7|-0.0261|0.0009|0.8571|0|
-|L16.H2|7|-0.0221|0.0004|1|0.1429|
-|L13.H1|7|-0.016|0.0003|0.8571|0.1429|
-|L16.H15|7|-0.0143|0|1|0.1429|
-|L15.H3|7|-0.0122|0.0005|0.8571|0.1429|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|7|-0.102|1|0.8571|44.2857|9.4286|
+|L17.H6|7|-0.0441|1|0.8571|44.2857|21.1429|
+|L13.H1|7|-0.017|0.8571|0.8571|44.2857|30.8571|
 
 ### south_america
 
 - 프롬프트 예시: `What is the capital of Argentina? Answer:`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L15.H7|11|-0.1854|0.0139|1|0.2727|
-|L16.H2|11|-0.0655|0.0023|0.9091|0|
-|L18.H9|11|-0.0398|0.0015|0.8182|0|
-|L22.H2|11|-0.0342|0.0003|1|0.0909|
-|L15.H9|11|-0.0272|0.0006|0.8182|0|
-|L17.H6|11|-0.0265|0.0002|1|0|
-|L19.H7|11|-0.0262|0.0012|0.8182|0|
-|L15.H11|11|-0.0198|0.0009|0.9091|0.0909|
-|L14.H7|11|-0.0185|0.0004|0.9091|0.0909|
-|L23.H13|11|-0.016|0.0002|0.9091|0.0909|
-|L16.H6|11|-0.0144|0.0005|0.8182|0.0909|
-|L16.H1|11|-0.0102|0.0003|0.8182|0|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|11|-0.1811|1|1|93.7273|13.1818|
+|L16.H2|11|-0.0612|0.9091|1|93.7273|67.3636|
+|L22.H2|11|-0.0334|1|1|93.7273|77.3636|
+|L13.H1|11|-0.022|0.8182|1|93.7273|54|
+|L17.H6|11|-0.0204|0.9091|1|93.7273|58.4545|
+|L23.H13|11|-0.0146|0.9091|0.9091|93.7273|87.0909|
 
 ## 2. chemical
 
@@ -204,11 +195,10 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `The chemical symbol for Hydrogen is`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L13.H6|100|-0.1236|0.0207|0.84|0.19|
-|L22.H2|100|-0.0556|0.0039|0.82|0.01|
-
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L13.H6|100|-0.1218|0.81|1|136.09|9.35|
+|L22.H2|100|-0.0557|0.82|0.98|136.09|62.48|
 
 ## 3. logical
 
@@ -216,20 +206,17 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `1, 2,`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L12.H0|38|-0.2335|0.0615|0.8421|0.6053|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L12.H0|38|-0.2342|0.8421|0.7368|408.2632|120.7632|
 
 ### order3
 
 - 프롬프트 예시: `1, 2, 3,`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L12.H0|32|-0.5218|0.0304|1|0.8438|
-|L10.H7|32|-0.0874|0.0062|0.8438|0|
-|L12.H7|32|-0.0656|0.0069|0.875|0|
-|L22.H2|32|-0.0281|0.0008|0.9062|0|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L12.H0|32|-0.527|1|0.9688|1110.75|228.6562|
 
 ## 4. mathematics
 
@@ -237,63 +224,62 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Cal : 12+35=`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L12.H0|100|-0.2586|0.0304|0.91|0.78|
-|L13.H1|100|-0.2113|0.0312|0.93|0.57|
-|L13.H6|100|-0.1394|0.0382|0.8|0.41|
-|L11.H10|100|-0.0957|0.0115|0.81|0.31|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L22.H2|100|-0.0184|0.62|0.81|102.9|46.73|
 
 ### arithmetic_geometric_progression
 
 - 프롬프트 예시: `Find the pattern: 3, 7, 15, 31, 63, 127,`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L13.H6|30|-0.0339|0.003|0.8|0.1333|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L7.H7|30|-0.1946|0.7667|0.7333|2177.4667|168.3333|
 
 ### arithmetic_progression
 
 - 프롬프트 예시: `Find the pattern: 2, 5, 8, 11,`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L13.H6|30|-0.1044|0.0067|1|0.4333|
-|L10.H7|30|-0.0271|0.001|0.8333|0.1333|
-|L16.H14|30|-0.0157|0.0007|0.8|0.1333|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L12.H0|30|-0.1685|0.8|0.8667|32.4|13.9|
+|L13.H6|30|-0.1058|1|0.9333|32.4|20.4667|
 
 ### constant
 
 - 프롬프트 예시: `Output only the number. pi =`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L11.H11|50|-0.0115|0.0018|0.58|0.12|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L11.H11|50|-0.0119|0.62|0.38|140.22|105.82|
+|L14.H5|50|-0.0107|0.64|0.38|140.22|83.16|
 
 ### geometric_progression
 
 - 프롬프트 예시: `Find the pattern: 2, 4, 8, 16,`
 
-유의미한 헤드를 찾지 못함
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L13.H6|30|-0.0679|0.7333|0.7333|110.9333|70.8333|
+|L19.H5|30|-0.0112|0.7|0.7333|110.9333|94.9|
 
 ### mul
 
 - 프롬프트 예시: `Cal : 12*24=`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L13.H6|100|-0.0632|0.0126|0.8|0.41|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L13.H6|100|-0.0645|0.79|0.76|580.59|217.8|
+|L12.H15|100|-0.0412|0.71|0.73|580.59|412.42|
+|L22.H2|100|-0.0226|0.72|0.85|580.59|217.05|
 
 ### sub
 
 - 프롬프트 예시: `Cal : 39 minus 38=`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L13.H1|100|-0.1541|0.0158|0.96|0.67|
-|L11.H10|100|-0.1099|0.0178|0.88|0.53|
-|L12.H6|100|-0.0808|0.0129|0.8|0.37|
-|L16.H14|100|-0.0774|0.014|0.8|0.49|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L22.H2|100|-0.0156|0.75|0.9|376.62|216.88|
 
 ## 5. opposite
 
@@ -301,13 +287,13 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `The opposite of 'hot' is '`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L13.H2|100|-0.2209|0.0293|0.97|0.18|
-|L14.H12|100|-0.0573|0.0057|0.8|0.07|
-|L22.H0|100|-0.0259|0.0013|0.8|0.04|
-|L23.H2|100|-0.018|0.0009|0.81|0.01|
-|L23.H9|100|-0.0163|0.0004|0.8|0.02|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L13.H2|100|-0.2199|0.97|0.97|327.18|80.28|
+|L14.H12|100|-0.0567|0.83|0.95|327.18|196.5|
+|L22.H0|100|-0.0253|0.8|0.93|327.18|235.86|
+|L23.H2|100|-0.0179|0.8|0.86|327.18|283.2|
+|L23.H9|100|-0.0162|0.82|0.92|327.18|281.5|
 
 ## 6. place
 
@@ -321,9 +307,10 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Albert Einstein was born in`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L17.H0|50|-0.0213|0.001|0.8|0.26|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|50|-0.0372|0.76|0.62|275.68|142.02|
+|L17.H0|50|-0.0206|0.74|0.66|275.68|138.4|
 
 ## 7. time
 
@@ -331,7 +318,9 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `Answer using only a 4-digit number. World War I began in`
 
-유의미한 헤드를 찾지 못함
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L14.H2|79|-0.0436|0.6203|0.6709|417.5316|72.6329|
 
 ## 8. country
 
@@ -339,16 +328,15 @@ https://headbb.vercel.app/
 
 - 프롬프트 예시: `What country is Paris in? Answer:`
 
-|head|prompt_count|base_token_prob_delta_mean|base_token_prob_delta_variance|base_token_prob_decrease_ratio|base_token_changed_ratio|
-|---|---|---|---|---|---|
-|L15.H7|28|-0.1592|0.0065|1.0|0.0714|
-|L17.H6|28|-0.0575|0.0012|0.9643|0.0714|
-|L19.H5|28|-0.0436|0.0009|1.0|0.0|
-|L22.H2|28|-0.0352|0.0003|1.0|0.0|
-|L17.H0|28|-0.0305|0.0005|0.9286|0.0|
-|L14.H7|28|-0.0236|0.0008|0.8214|0.0|
-|L21.H10|28|-0.0197|0.0002|0.8929|0.0|
-|L19.H2|28|-0.0125|0.0002|0.8214|0.0|
+|head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+|---|---|---|---|---|---|---|
+|L15.H7|28|-0.1611|1|1|46.75|8|
+|L17.H6|28|-0.0587|1|0.9643|46.75|23.0357|
+|L19.H5|28|-0.0452|1|0.9286|46.75|30.5357|
+|L22.H2|28|-0.0344|1|0.9286|46.75|38|
+|L17.H0|28|-0.0319|0.9643|0.9286|46.75|31.5714|
+|L21.H10|28|-0.0212|0.8929|0.8571|46.75|37.8214|
+|L19.H2|28|-0.012|0.8214|0.8214|46.75|39.5|
 
 ## 9. profession
 

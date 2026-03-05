@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import numpy as np  # type: ignore
 import argparse
 import csv
 import json
@@ -30,14 +31,9 @@ def get_device() -> torch.device:
 
 
 def configure_reproducibility(seed: int, device: torch.device) -> None:
+    np.random.seed(seed)
     random.seed(seed)
     torch.manual_seed(seed)
-    try:
-        import numpy as np  # type: ignore
-
-        np.random.seed(seed)
-    except ImportError:
-        pass
 
     if device.type == "cuda":
         # Required by CUDA for deterministic GEMM kernels.
@@ -670,6 +666,8 @@ def main() -> None:
                     row
                     for row in summary_candidates
                     if row["base_token_prob_decrease_ratio"] >= threshold
+                    and row["donor_token_prob_increase_ratio"] >= threshold
+                    and row["donor_token_rank_up_ratio"] >= threshold
                     and row["base_token_prob_delta_mean"] < SUMMARY_DELTA_MEAN_THRESHOLD
                 ]
                 if tier_rows:
