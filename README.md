@@ -270,9 +270,8 @@ https://headbb.vercel.app/
 
 |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
 |---|---|---|---|---|---|---|
-|L13.H6|100|-0.0645|0.79|0.76|580.59|217.8|
-|L12.H15|100|-0.0412|0.71|0.73|580.59|412.42|
-|L22.H2|100|-0.0226|0.72|0.85|580.59|217.05|
+|L12.H15|200|-0.1181|0.89|0.81|2857.665|2339.25|
+|L22.H2|200|-0.0472|0.87|0.85|2857.665|1969.34|
 
 ### sub
 
