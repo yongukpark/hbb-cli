@@ -226,7 +226,8 @@ https://headbb.vercel.app/
 
 |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
 |---|---|---|---|---|---|---|
-|L22.H2|100|-0.0184|0.62|0.81|102.9|46.73|
+|L12.H0|159|-0.2842|0.93|0.84|1893.02|465.83|
+|L22.H2|159|-0.0502|0.86|0.97|1893.02|763.89|
 
 ### arithmetic_geometric_progression
 
