@@ -413,4 +413,8 @@ https://headbb.vercel.app/
   |---|---|---|---|---|---|---|
   |L14.H5|13|-0.079|1.0|0.85|14.62|9.31|
 
-
+### file_extension
+- 프롬프트 예시: `The file extension for Python source files is .`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L22.H2|100|-0.016|0.82|0.86|407.5|317.64|
