@@ -445,3 +445,12 @@ https://headbb.vercel.app/
   |---|---|---|---|---|---|---|
   |L11.H1|75|-0.0193|0.88|0.5733|6.51|5.45|
   |L14.H7|75|-0.0165|0.84|0.56|6.51|5.36|
+
+## 15. music
+
+### instruments_fs
+- 프롬프트 예시: `Violin is a string instrument. Trumpet is a`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L18.H8|37|-0.0464|0.9730|0.8108|17.27|9.43|
+  |L14.H5|37|-0.0421|0.8378|0.8919|17.27|6.30|
