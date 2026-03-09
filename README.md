@@ -426,3 +426,12 @@ https://headbb.vercel.app/
   |L14.H5|41|-0.133|0.92|0.90|70.36|29.24|
   |L15.H6|41|-0.106|0.92|0.88|70.36|33.12|
   |L15.H7|41|-0.075|0.87|0.80|70.36|47.12|
+
+## 14. colors
+
+### color_fs_corr
+- 프롬프트 예시: `The color of banana is yellow.\nThe color of snow is '`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L11.H1|75|-0.0193|0.88|0.5733|6.51|5.45|
+  |L14.H7|75|-0.0165|0.84|0.56|6.51|5.36|
