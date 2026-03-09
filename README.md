@@ -418,3 +418,11 @@ https://headbb.vercel.app/
   |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
   |---|---|---|---|---|---|---|
   |L22.H2|100|-0.016|0.82|0.86|407.5|317.64|
+
+### port_number
+- 프롬프트 예시: `The default port for HTTP is`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L14.H5|41|-0.133|0.92|0.90|70.36|29.24|
+  |L15.H6|41|-0.106|0.92|0.88|70.36|33.12|
+  |L15.H7|41|-0.075|0.87|0.80|70.36|47.12|
