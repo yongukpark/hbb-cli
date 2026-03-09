@@ -338,6 +338,14 @@ https://headbb.vercel.app/
   |L21.H10|28|-0.0212|0.8929|0.8571|46.75|37.8214|
   |L19.H2|28|-0.012|0.8214|0.8214|46.75|39.5|
 
+### ISO code
+
+- 프롬프트 예시: `The ISO country code for United States is`
+
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L22.H2|165|-0.043|0.818|0.993|325.424|197.27|
+  
 ## 9. profession
 
 ### celebrity
