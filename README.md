@@ -478,3 +478,13 @@ https://headbb.vercel.app/
   |---|---|---|---|---|---|---|
   |L18.H8|37|-0.0464|0.9730|0.8108|17.27|9.43|
   |L14.H5|37|-0.0421|0.8378|0.8919|17.27|6.30|
+
+## 16. job
+
+### workplace 
+- 프롬프트 예시: `A librarian works in a`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L16.H1|70|-0.0146|0.7429|0.8|637.31|427.77|
+  |L21.H10|70|-0.0120|0.80|0.7714|637.31|497.17|
+  |L23.H9|70|-0.0101|0.80|0.7143|637.31|566.19|
