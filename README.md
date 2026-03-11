@@ -318,6 +318,16 @@ https://headbb.vercel.app/
   |L15.H11|50|-0.0431|0.82|0.8|372.46|295.06|
   |L13.H6|50|-0.0369|0.9|0.94|372.46|284.66|
 
+### active_passive
+
+- 프롬프트 예시: `The chef prepared the meal. The meal was`
+
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L12.H8|37|-0.0414|0.8108|0.9189|1272.9459|763.5676|
+  |L18.H4|37|-0.0301|0.9189|1.0|1272.9459|674.7027|
+  |L15.H6|37|-0.0224|0.8649|0.9459|1272.9459|889.7027|
+
 ## 5. place
 
 ### architecture
