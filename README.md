@@ -379,6 +379,20 @@ https://headbb.vercel.app/
   |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
   |---|---|---|---|---|---|---|
   |L22.H2|165|-0.043|0.818|0.993|325.424|197.27|
+
+### university
+
+- 프롬프트 예시: `What is the country of Tohoku University? Answer: The country is '`
+
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L15.H7|50|-0.1442|0.94|1.0|79.52|10.94|
+  |L17.H6|50|-0.0963|0.86|0.96|79.52|34.56|
+  |L22.H2|50|-0.0252|0.82|0.94|79.52|60.52|
+  |L17.H0|50|-0.0201|0.86|0.96|79.52|57.28|
+  |L21.H10|50|-0.0169|0.84|0.92|79.52|66.16|
+  |L23.H13|50|-0.0139|0.84|0.82|79.52|71.28|
+  |L23.H9|50|-0.0119|0.8|0.84|79.52|74.22|
   
 ## 9. profession
 
