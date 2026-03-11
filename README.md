@@ -512,7 +512,44 @@ https://headbb.vercel.app/
   |L14.H7|26|-0.0364|0.8077|0.9231|891.5|576.2308|
   |L18.H4|26|-0.0298|0.8462|0.8077|891.5|732.1538|
 
-## 17. job
+## 17. translation
+
+### eng-chinese
+- 프롬프트 예시: `Answer with a Chinese Hanzi. English: 'Star' / Chinese: '`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L14.H5|45|-0.0447|0.8222|0.8444|148.9778|88.8667|
+  |L12.H8|45|-0.0199|0.8|0.8|148.9778|131.4|
+  |L19.H2|45|-0.0109|0.8667|0.8222|148.9778|128.8444|
+
+### eng-french
+- 프롬프트 예시: `Answer with a French word. English: 'Sun' / French: '`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L11.H1|41|-0.0454|0.8049|0.8537|234.439|183.2683|
+  |L23.H13|41|-0.018|0.8049|0.878|234.439|202.1463|
+
+### eng-german
+- 프롬프트 예시: `Answer with a German word. English: 'Moon' / German: '`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L11.H1|40|-0.0594|0.825|0.75|219.375|183.925|
+  |L22.H2|40|-0.0403|0.75|0.8|219.375|169.55|
+  |L16.H6|40|-0.0246|0.825|0.7|219.375|174.925|
+
+### eng-italian
+- 프롬프트 예시: `Answer with an Italian word. English: 'Sun' / Italian: '`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L22.H2|40|-0.0506|0.8|0.925|343.425|219.2|
+
+### eng-spanish
+- 프롬프트 예시: `Answer with a Spanish word. English: 'Moon' / Spanish: '`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L22.H2|42|-0.053|0.9286|0.9524|109.7857|80.6667|
+
+## 18. job
 
 ### workplace 
 - 프롬프트 예시: `A librarian works in a`
