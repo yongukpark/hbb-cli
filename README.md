@@ -591,7 +591,7 @@ https://headbb.vercel.app/
   |L21.H10|70|-0.0120|0.80|0.7714|637.31|497.17|
   |L23.H9|70|-0.0101|0.80|0.7143|637.31|566.19|
 
-## 20. taste
+## 20. food
 
 ### yum
 - 프롬프트 예시: `The taste of lemon is sour.\nThe taste of chocolate is '`
