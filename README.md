@@ -511,6 +511,12 @@ https://headbb.vercel.app/
   |L14.H7|26|-0.0364|0.8077|0.9231|891.5|576.2308|
   |L18.H4|26|-0.0298|0.8462|0.8077|891.5|732.1538|
 
+### specialty
+- 프롬프트 예시: `The medical field that treats the heart is called`
+  |head|prompt_count|base_token_prob_delta_mean|base_token_prob_decrease_ratio|donor_token_rank_up_ratio|donor_token_rank_pre_replace_mean|donor_token_rank_post_replace_mean|
+  |---|---|---|---|---|---|---|
+  |L15.H13|32|-0.1717|0.9063|0.9688|339.75|18.34|
+
 ## 16. translation
 
 ### eng-chinese
